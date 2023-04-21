@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>62"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tomlize"
+version = "0.0.2"
+authors = [
+    {name = "Mario Corchero", email = "mariocj89@gmail.com"},
+]
+description = "Move all your configuration to pyproject.toml"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["pyproject", "configuration", "python", "tool"]
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "toml",
+    "coloredlogs",
+]
