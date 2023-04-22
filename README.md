@@ -1,5 +1,6 @@
 # tomlize
 
+[![CI](https://github.com/mariocj89/tomlize/actions/workflows/valdiate.yaml/badge.svg)](https://github.com/mariocj89/tomlizer/actions/workflows/valdiate.yaml)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/tomlize)
 ![PyPI](https://img.shields.io/pypi/v/tomlize)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/tomlize)

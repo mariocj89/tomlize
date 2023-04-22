@@ -1,4 +1,13 @@
+# linting
 black
 isort
 ruff
+
+# testing
+pytest
+pytest-cov
+
+# Additional packages used by the test suite
+pkginfo
+build
 validate-pyproject

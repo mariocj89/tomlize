@@ -143,7 +143,7 @@ def extract(setup_path: pathlib.Path) -> dict:
     if metadata:
         ret["project"] = metadata
     if setuptools_specific:
-        ret["tool"]= {"setuptools": setuptools_specific}
+        ret["tool"] = {"setuptools": setuptools_specific}
     return ret
 
 
@@ -151,10 +151,7 @@ def _run_setup_py(setup_path: pathlib.Path):
     try:
         exec(
             setup_path.read_text(),
-            {
-                "__name__": "__main__",
-                "__file__": "setup.py"
-            },
+            {"__name__": "__main__", "__file__": "setup.py"},
         )
     except FileNotFoundError:
         raise exceptions.FailedToParseError(setup_path, "File not found")

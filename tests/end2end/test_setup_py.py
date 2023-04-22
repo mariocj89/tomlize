@@ -1,10 +1,10 @@
-import shutil
 import pprint
+import shutil
 import subprocess
-import pkginfo
 import sys
 import tarfile
 
+import pkginfo
 import pytest
 
 from .. import utils
@@ -90,31 +90,41 @@ def extract_metadata(project_folder):
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
         )
     except subprocess.CalledProcessError as e:
         print(e.stdout)
         raise
-    wheel, = list(project_folder.glob("dist/*whl"))
+    (wheel,) = list(project_folder.glob("dist/*whl"))
     res = pkginfo.Wheel(wheel)
     shutil.rmtree(project_folder.joinpath("dist"))
-    return {k: getattr(res,k) for k in res.iterkeys()}
+    return {k: getattr(res, k) for k in res.iterkeys()}
+
 
 def download_package(tmp_path, package_name):
     subprocess.run(
-        [sys.executable, "-m", "pip", "download", "--no-binary=:all:", "--no-deps", package_name],
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "download",
+            "--no-binary=:all:",
+            "--no-deps",
+            package_name,
+        ],
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
-    tarname, = list(tmp_path.glob("*tar.gz"))
+    (tarname,) = list(tmp_path.glob("*tar.gz"))
     tar = tarfile.open(tarname, "r:gz")
     tar.extractall()
     tar.close()
 
     tarname.unlink()
-    project_folder, = list(tmp_path.glob("*"))
+    (project_folder,) = list(tmp_path.glob("*"))
     return project_folder
+
 
 def transform_setuppy(project_folder):
     setup_py = project_folder / "setup.py"
@@ -130,14 +140,17 @@ def transform_setuppy(project_folder):
     print(project_folder.joinpath("pyproject.toml").read_text())
     print(f"{'':*^50}")
 
-@pytest.mark.parametrize("package_name",
-[
-    "boto3==1.26.118",
-    # "urllib3==1.26.15", Fails on long_description
-    "requests==2.28.2",
-    "botocore==1.29.118",
-    "certifi==2022.12.7",
-])
+
+@pytest.mark.parametrize(
+    "package_name",
+    [
+        "boto3==1.26.118",
+        # "urllib3==1.26.15", Fails on long_description
+        "requests==2.28.2",
+        "botocore==1.29.118",
+        "certifi==2022.12.7",
+    ],
+)
 def test_top_packages_conversion(tmp_path, monkeypatch, package_name):
     monkeypatch.chdir(tmp_path)
     project_folder = download_package(tmp_path, package_name)
@@ -154,7 +167,9 @@ def test_top_packages_conversion(tmp_path, monkeypatch, package_name):
 
     # massage the data
     if requires_python := original_metadata.pop("requires_python"):
-        original_metadata["requires_python"] = ",".join(x for x in sorted(requires_python.replace(" ","").split(",")) if x)
+        original_metadata["requires_python"] = ",".join(
+            x for x in sorted(requires_python.replace(" ", "").split(",")) if x
+        )
     # https://peps.python.org/pep-0621/#have-a-separate-url-home-page-field
     if home_url := original_metadata.pop("home_page"):
         if not original_metadata["project_urls"]:
@@ -166,9 +181,10 @@ def test_top_packages_conversion(tmp_path, monkeypatch, package_name):
             original_metadata["description_content_type"] = description_content_type
     # TODO: Need to figure out why this fails
     if original_metadata.get("author") and original_metadata.get("author_email"):
-        original_metadata["author_email"] = f"{original_metadata['author']} <{original_metadata['author_email']}>"
+        original_metadata[
+            "author_email"
+        ] = f"{original_metadata['author']} <{original_metadata['author_email']}>"
         original_metadata.pop("author")
-
 
     mismatches = []
     for attr, original_value in original_metadata.items():

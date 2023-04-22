@@ -101,6 +101,7 @@ setuptools.setup(
     maintainer="Jose Garcia",
     maintainer_email="jose@garcia.com",
     url="chooserandom.com",
+    license_file="LICENSE",
     download_url="echaloasuerte.com",
     classifiers = [
         'Programming Language :: Python :: 3.11',
@@ -123,10 +124,11 @@ setuptools.setup(
             "name": "package",
             "version": "1.0.1",
             "description": "My cool package",
-            "urls": {'Home-page': "chooserandom.com"},
+            "urls": {"Home-page": "chooserandom.com"},
             "classifiers": ["Programming Language :: Python :: 3.11"],
             "download_url": "echaloasuerte.com",
             "requires-python": ">=3.11",
+            "license": {"file": "LICENSE"},
             "authors": [{"email": "john@doe.com", "name": "John Doe"}],
             "maintainers": [{"email": "jose@garcia.com", "name": "Jose Garcia"}],
             "dependencies": ["six", "python-dateutil>=2.7.0"],
@@ -216,7 +218,21 @@ setuptools.setup(
     )
     setup_py.parent.joinpath("README.md").write_text("")
 
-    assert extract(setup_py)["tool.setuptools"] == {
+    assert extract(setup_py)["tool"]["setuptools"] == {
         "package-dir": {"": "notsrc"},
         "packages": ["p"],
     }
+
+
+def test_keywords_as_string(setup_py):
+    setup_py.write_text(
+        """
+import setuptools
+setuptools.setup(
+    keywords="many, keywords"
+)
+        """
+    )
+    setup_py.parent.joinpath("README.md").write_text("")
+
+    assert extract(setup_py)["project"]["keywords"] == ["many", "keywords"]
