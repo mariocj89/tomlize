@@ -224,6 +224,26 @@ setuptools.setup(
     }
 
 
+def test_entry_points(setup_py):
+    setup_py.write_text(
+        """
+import setuptools
+setuptools.setup(
+    entry_points={
+        "pytest11": [
+            "pystack = pytest_pystack.plugin",
+        ],
+    },
+)
+        """
+    )
+    setup_py.parent.joinpath("README.md").write_text("")
+
+    assert extract(setup_py)["project"]["entry-points"] == {
+        "pytest11": {"pystack": "pytest_pystack.plugin"}
+    }
+
+
 def test_keywords_as_string(setup_py):
     setup_py.write_text(
         """

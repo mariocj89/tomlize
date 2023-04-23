@@ -2,6 +2,7 @@
 import logging
 import pathlib
 import unittest.mock
+from importlib.metadata import entry_points
 
 import packaging.requirements
 
@@ -22,11 +23,10 @@ def extract(setup_path: pathlib.Path) -> dict:
     data = _extract_setup_args(setup_path)
     ret = {}
 
-    ## Pending fields
+    ## TODO: Pending fields
     # ext_modules
     # ext_package
     # package_data
-    # entry_points
 
     ### Ignored fields ###
     for field in [
@@ -124,6 +124,14 @@ def extract(setup_path: pathlib.Path) -> dict:
         ("package_dir", "package-dir"),
     ]:
         moveif(data, setuptools_specific, orig_attr, dst_attr)
+    for ep_group_name, ep_group in data.get("entry_points", {}).items():
+        new_ep_group = {}
+        for ep in ep_group:
+            ep_name, ep_value = ep.split("=")
+            new_ep_group[ep_name.strip()] = ep_value.strip()
+        metadata.setdefault("entry-points", {})
+        metadata["entry-points"][ep_group_name] = new_ep_group
+        # TODO: Handle console scripts (Either here or in enhance)
 
     ### Enhancements ###
     project_root = setup_path.parent
