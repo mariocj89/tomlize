@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
     "toml",
     "coloredlogs",
+    "packaging",
 ]
 
 [project.urls]
