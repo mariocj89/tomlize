@@ -2,7 +2,6 @@
 import logging
 import pathlib
 import unittest.mock
-from importlib.metadata import entry_points
 
 import packaging.requirements
 
