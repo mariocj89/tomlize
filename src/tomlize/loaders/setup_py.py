@@ -39,7 +39,6 @@ def extract(setup_path: pathlib.Path) -> dict:
         "name",
         "version",
         "description",
-        "download_url",
         "classifiers",
         "keywords",
     ]:
@@ -67,6 +66,10 @@ def extract(setup_path: pathlib.Path) -> dict:
         if "urls" not in metadata:
             metadata["urls"] = {}
         metadata["urls"]["Home-page"] = url
+    if download_url := data.pop("download_url", None):
+        if "urls" not in metadata:  # pragma: no cover
+            metadata["urls"] = {}
+        metadata["urls"]["Download"] = download_url
     if license_text := data.pop("license", None):
         metadata["license"] = {"text": license_text}
     if license_file := data.pop("license_file", None):
