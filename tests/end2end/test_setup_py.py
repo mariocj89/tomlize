@@ -149,6 +149,7 @@ def transform_setuppy(project_folder):
         "requests==2.28.2",
         "botocore==1.29.118",
         "certifi==2022.12.7",
+        "cysimdjson==21.11",
     ],
 )
 def test_top_packages_conversion(tmp_path, monkeypatch, package_name):
@@ -165,6 +166,10 @@ def test_top_packages_conversion(tmp_path, monkeypatch, package_name):
     print(f"{' new metadata ':*<50}")
     pprint.pprint(new_metadata)
 
+    # Ignore unsupported fields
+    for key in ["platforms"]:
+        original_metadata.pop(key)
+
     # massage the data
     if requires_python := original_metadata.pop("requires_python"):
         original_metadata["requires_python"] = ",".join(
@@ -175,6 +180,11 @@ def test_top_packages_conversion(tmp_path, monkeypatch, package_name):
         if not original_metadata["project_urls"]:
             original_metadata["project_urls"] = []
         original_metadata["project_urls"].append(f"Home-page, {home_url}")
+    # download_url is no longer present in pyproject.toml
+    if download_url := original_metadata.pop("download_url"):
+        if not original_metadata["project_urls"]:
+            original_metadata["project_urls"] = []
+        original_metadata["project_urls"].append(f"Download, {download_url}")
     # Can be taken from readme file
     if description_content_type := new_metadata.get("description_content_type"):
         if not original_metadata.get("description_content_type"):

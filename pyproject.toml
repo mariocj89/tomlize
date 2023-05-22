@@ -19,9 +19,10 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
-    "toml",
     "coloredlogs",
     "packaging",
+    "pyproject_hooks",
+    "toml",
 ]
 
 [project.urls]
