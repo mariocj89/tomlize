@@ -90,22 +90,24 @@ def test_end_to_end_empty(setup_py, empty_pyproject_toml):
     assert (
         empty_pyproject_toml.read_text()
         == """\
+
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = [ "setuptools >= 70.0.0", "toml > 1.0",]
+requires = ["setuptools >= 70.0.0", "toml > 1.0"]
 
 [project]
 name = "package"
 version = "1.0.0"
 description = "My cool package"
 requires-python = ">=3.11"
-dependencies = [ "six", "python-dateutil>=2.7.0",]
+dependencies = ["six", "python-dateutil>=2.7.0"]
+
 [[project.authors]]
 name = "John Doe"
 email = "john@doe.com"
 
 [project.optional-dependencies]
-docker = [ "binaryornot",]
+docker = ["binaryornot"]
 """
     )
 
