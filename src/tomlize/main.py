@@ -1,4 +1,5 @@
 import pathlib
+from typing import Optional
 
 import coloredlogs
 import toml
@@ -7,7 +8,9 @@ from . import setup_py
 from .cli import parse_args
 
 
-def _convert(*, input_file: pathlib.Path, existing_config: dict | None) -> dict:
+def _convert(
+    *, input_file: pathlib.Path, existing_config: Optional[dict] = None
+) -> dict:
     result = {}
     if existing_config:
         result.update(existing_config)
