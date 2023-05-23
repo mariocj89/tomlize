@@ -62,6 +62,24 @@ def run(*args):
     main.main(_args)
 
 
+def test_end_to_end_failure(capsys):
+    with pytest.raises(SystemExit):
+        run("foobar.cfg")
+
+    captured = capsys.readouterr()
+    assert "Failed to convert" in captured.err
+
+
+def test_entry_point():
+    proc = subprocess.run(
+        [sys.executable, "-m", "tomlize", "-h"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "show this help message and exit" in proc.stdout
+
+
 def test_end_to_end_stdout(setup_py):
     run(setup_py)
     print(pathlib.Path("pyproject.toml").read_text())
@@ -140,10 +158,7 @@ def transform_setuppy(project_folder):
     print(f"{' setup.py ':*^50}")
     print(setup_py.read_text())
     print(f"{'':*^50}")
-    subprocess.run(
-        [sys.executable, "-m", "tomlize", setup_py],
-        check=True,
-    )
+    main.main([os.fspath(setup_py)])
     setup_py.unlink()
     print(f"{' pyproject.toml ':*^50}")
     print(project_folder.joinpath("pyproject.toml").read_text())
