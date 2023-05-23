@@ -1,4 +1,6 @@
 import contextlib
+import os
+import pathlib
 import pprint
 import shutil
 import subprocess
@@ -7,6 +9,8 @@ import tarfile
 
 import pkginfo
 import pytest
+
+from tomlize import main
 
 from .. import utils
 
@@ -49,10 +53,8 @@ def empty_pyproject_toml(tmp_path):
 
 
 def run(*args):
-    subprocess.run(
-        [sys.executable, "-m", "tomlize", *args],
-        check=True,
-    )
+    _args = [os.fspath(arg) if isinstance(arg, pathlib.Path) else arg for arg in args]
+    main.main(_args)
 
 
 def test_end_to_end_stdout(setup_py):
