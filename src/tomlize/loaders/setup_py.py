@@ -1,9 +1,14 @@
 """Transforms setuptools setup_py metadata to toml dict"""
+import contextlib
 import logging
 import pathlib
+import subprocess
+import sys
 import unittest.mock
 
 import packaging.requirements
+import pyproject_hooks
+import toml
 
 from .. import exceptions
 
@@ -18,7 +23,31 @@ def moveif(orig, dst, orig_key, dst_key=None):
         dst[dst_key] = orig.pop(orig_key)
 
 
+def _pip_install(dependencies: list[str]) -> None:
+    p = subprocess.run(
+        [sys.executable, "-m", "pip", "install", *dependencies],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    if p.returncode != 0:
+        pass  # TODO: Inform user of the error
+
+
+def _install_build_dependencies(project_path: pathlib.Path) -> list[str]:
+    with contextlib.suppress(FileNotFoundError, KeyError, subprocess.SubprocessError):
+        pyproject_content = project_path.joinpath("pyproject.toml").read_text()
+        requires = toml.loads(pyproject_content)["build-system"]["requires"]
+        _pip_install(requires)
+    hook_caller = pyproject_hooks.BuildBackendHookCaller(
+        project_path, "setuptools.build_meta"
+    )
+    requires = hook_caller.get_requires_for_build_sdist()
+    _pip_install(requires)
+
+
 def extract(setup_path: pathlib.Path) -> dict:
+    with contextlib.suppress(Exception):
+        _install_build_dependencies(setup_path.parent)
     data = _extract_setup_args(setup_path)
     ret = {}
 

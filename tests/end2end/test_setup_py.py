@@ -150,6 +150,7 @@ def transform_setuppy(project_folder):
         "requests==2.28.2",
         "botocore==1.29.118",
         "certifi==2022.12.7",
+        "cysimdjson==21.11",
     ],
 )
 def test_top_packages_conversion(tmp_path, monkeypatch, package_name):
@@ -165,6 +166,10 @@ def test_top_packages_conversion(tmp_path, monkeypatch, package_name):
     pprint.pprint(original_metadata)
     print(f"{' new metadata ':*<50}")
     pprint.pprint(new_metadata)
+
+    # Ignore unsupported fields
+    for key in ["platforms"]:
+        original_metadata.pop(key)
 
     # massage the data
     if requires_python := original_metadata.pop("requires_python"):
