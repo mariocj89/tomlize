@@ -23,17 +23,15 @@ def _convert(*, input_file: pathlib.Path, existing_config: dict | None) -> dict:
 def main(argv):
     args = parse_args(argv)
     coloredlogs.install(level="INFO", fmt="%(message)s")
+    output_file = pathlib.Path("pyproject.toml")
 
     existing_config = None
-    if args.output_file and args.output_file.exists():
-        existing_config = toml.loads(args.output_file.read_text())
+    if output_file.exists():
+        existing_config = toml.loads(output_file.read_text())
 
     result = _convert(
         input_file=args.input_file,
         existing_config=existing_config,
     )
     output = toml.dumps(result)
-    if args.output_file:
-        args.output_file.write_text(output)
-    else:
-        print(output)
+    output_file.write_text(output)
