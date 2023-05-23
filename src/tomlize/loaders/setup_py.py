@@ -6,80 +6,38 @@ import unittest.mock
 import packaging.requirements
 
 from .. import exceptions
+from .setuptools_mapping import FIELDS_MAPPING
 
 MIN_SETUPTOOLS_VERSION = "62.0.0"  # TODO: Find minimal vesion
 
 
-def moveif(orig, dst, orig_key, dst_key=None):
-    """Copies the key if exists"""
-    if dst_key is None:
-        dst_key = orig_key
-    if orig_key in orig:
-        dst[dst_key] = orig.pop(orig_key)
-
-
 def extract(setup_path: pathlib.Path) -> dict:
     data = _extract_setup_args(setup_path)
-    ret = {}
+    ret = {"build-system": {}, "project": {}}
 
-    ## TODO: Pending fields
-    # ext_modules
-    # ext_package
-    # package_data
-
-    ### Ignored fields ###
-    for field in [
-        "zip_safe",  # Deprecated
-    ]:
-        data.pop(field, None)
-
-    ### metadata fields ###
-    metadata = {}
-    for attr in [
-        "name",
-        "version",
-        "description",
-        "classifiers",
-        "keywords",
-    ]:
-        moveif(data, metadata, attr)
-    for orig_attr, dst_attr in [
-        ("python_requires", "requires-python"),
-        ("install_requires", "dependencies"),
-        ("extras_require", "optional-dependencies"),
-        ("project_urls", "urls"),
-    ]:
-        moveif(data, metadata, orig_attr, dst_attr)
-    if "author" in data or "author_email" in data:
-        metadata["authors"] = [{}]
-        if name := data.pop("author", None):
-            metadata["authors"][0]["name"] = name
-        if email := data.pop("author_email", None):
-            metadata["authors"][0]["email"] = email
-    if "maintainer" in data or "maintainer_email" in data:
-        metadata["maintainers"] = [{}]
-        if name := data.pop("maintainer", None):
-            metadata["maintainers"][0]["name"] = name
-        if email := data.pop("maintainer_email", None):
-            metadata["maintainers"][0]["email"] = email
-    if url := data.pop("url", None):
-        if "urls" not in metadata:
-            metadata["urls"] = {}
-        metadata["urls"]["Home-page"] = url
-    if download_url := data.pop("download_url", None):
-        if "urls" not in metadata:  # pragma: no cover
-            metadata["urls"] = {}
-        metadata["urls"]["Download"] = download_url
-    if license_text := data.pop("license", None):
-        metadata["license"] = {"text": license_text}
-    if license_file := data.pop("license_file", None):
-        metadata["license"] = {"file": license_file}
+    ### Translate metadata ###
+    for field_key, target in FIELDS_MAPPING.items():
+        if field_key not in data:
+            continue
+        orig_value = data.pop(field_key)
+        if isinstance(target, list):
+            target_object = ret
+            *path_parts, terminal = target
+            for target_part in path_parts:
+                target_object.setdefault(target_part, {})
+                target_object = target_object[target_part]
+            target_object[terminal] = orig_value
+        elif callable(target):
+            target(orig_value, ret)
+        elif target is None:
+            continue
+        else:  # pragma: no cover
+            raise Exception("Invalid mapping type {target!r} for key {field_key!r}")
 
     ### build system fields ###
-    build_system = {
-        "build-backend": "setuptools.build_meta",
-        "requires": [],
-    }
+    build_system = ret["build-system"]
+    build_system["build-backend"] = "setuptools.build_meta"
+    build_system["requires"] = []
     for req_str in data.pop("setup_requires", []):
         req = packaging.requirements.Requirement(req_str)
         if req.name == "setuptools":
@@ -97,63 +55,18 @@ def extract(setup_path: pathlib.Path) -> dict:
         build_system["requires"].append(
             f"setuptools >= {MIN_SETUPTOOLS_VERSION}",
         )
-    ret["build-system"] = build_system
-
-    ### setuptools specific fields ###
-    setuptools_specific = {}
-
-    if data.get("package_dir", {}).get("") == "src":
-        # TODO: Properly figure out if we can default to automatic discovery
-        # standard src layout, default to automatic discovery
-        data.pop("package_dir")
-        data.pop("packages", None)
-        data.pop("py_modules", None)
-    else:
-        moveif(data, setuptools_specific, "packages")
-        moveif(data, setuptools_specific, "py_modules")
-        moveif(data, setuptools_specific, "package_dir", "package-dir")
-
-    for attr in [
-        "platform",
-        "packages",
-    ]:
-        moveif(data, setuptools_specific, attr)
-    for orig_attr, dst_attr in [
-        ("scripts", "script-files"),
-        ("data_files", "data-files"),
-        ("include_package_data", "include-package-data"),
-        ("py_modules", "py-modules"),
-        ("package_dir", "package-dir"),
-    ]:
-        moveif(data, setuptools_specific, orig_attr, dst_attr)
-    for ep_group_name, ep_group in data.get("entry_points", {}).items():
-        new_ep_group = {}
-        for ep in ep_group:
-            ep_name, ep_value = ep.split("=")
-            new_ep_group[ep_name.strip()] = ep_value.strip()
-        metadata.setdefault("entry-points", {})
-        metadata["entry-points"][ep_group_name] = new_ep_group
-        # TODO: Handle console scripts (Either here or in enhance)
 
     ### Enhancements ###
     project_root = setup_path.parent
     for name in ["README.rst", "README.md"]:
         if project_root.joinpath(name).exists():
-            metadata["readme"] = name
-            data.pop("long_description", None)
-            data.pop("long_description_content_type", None)
-    if isinstance(metadata.get("keywords"), str):
-        metadata["keywords"] = metadata["keywords"].split(", ")
+            ret["project"]["readme"] = name
     # TODO: Find and use license-file (glob)
 
     ### Warn on remaining fields ###
     for field in data:
         logging.warning("Unexpected field found: %s", field)
 
-    if metadata:
-        ret["project"] = metadata
-    if setuptools_specific:
-        ret["tool"] = {"setuptools": setuptools_specific}
     return ret
 
 
