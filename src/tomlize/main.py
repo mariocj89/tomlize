@@ -2,7 +2,7 @@ import pathlib
 from typing import Optional
 
 import coloredlogs
-import toml
+import tomlkit
 
 from . import setup_py
 from .cli import parse_args
@@ -30,11 +30,11 @@ def main(argv):
 
     existing_config = None
     if output_file.exists():
-        existing_config = toml.loads(output_file.read_text())
+        existing_config = tomlkit.loads(output_file.read_text())
 
     result = _convert(
         input_file=args.input_file,
         existing_config=existing_config,
     )
-    output = toml.dumps(result)
-    output_file.write_text(output)
+    with output_file.open("w") as fp:
+        tomlkit.dump(result, fp)
