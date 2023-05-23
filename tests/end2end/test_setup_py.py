@@ -15,6 +15,11 @@ from tomlize import main
 from .. import utils
 
 
+@pytest.fixture(autouse=True)
+def tmp_ws(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+
 @pytest.fixture
 def setup_py(tmp_path):
     f = tmp_path / "setup.py"
@@ -59,10 +64,11 @@ def run(*args):
 
 def test_end_to_end_stdout(setup_py):
     run(setup_py)
+    print(pathlib.Path("pyproject.toml").read_text())
 
 
 def test_end_to_end_empty(setup_py, empty_pyproject_toml):
-    run(setup_py, empty_pyproject_toml)
+    run(setup_py)
     assert (
         empty_pyproject_toml.read_text()
         == """\
@@ -135,7 +141,7 @@ def transform_setuppy(project_folder):
     print(setup_py.read_text())
     print(f"{'':*^50}")
     subprocess.run(
-        [sys.executable, "-m", "tomlize", setup_py, "pyproject.toml"],
+        [sys.executable, "-m", "tomlize", setup_py],
         check=True,
     )
     setup_py.unlink()
