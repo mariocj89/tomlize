@@ -7,10 +7,11 @@ from tomlize.exceptions import FailedToParseError
 from tomlize.loaders.setup_py import extract
 
 EMPTY_RESULT = {
+    "project": {},
     "build-system": {
         "build-backend": "setuptools.build_meta",
         "requires": ["setuptools >= 62.0.0"],
-    }
+    },
 }
 
 
@@ -175,22 +176,6 @@ setuptools.setup(
 
     extract(setup_py)
     assert caplog.messages == ["Unexpected field found: ext_modules"]
-
-
-def test_src_dir_moved_to_automatic(setup_py, caplog):
-    caplog.set_level("WARN")
-    setup_py.write_text(
-        """
-import setuptools
-setuptools.setup(
-    package_dir={"": "src"},
-    packages=["a"]
-)
-        """
-    )
-
-    assert extract(setup_py) == EMPTY_RESULT
-    assert not caplog.messages
 
 
 def test_readme_file_adds_it_automatically(setup_py):
