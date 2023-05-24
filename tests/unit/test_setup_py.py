@@ -4,7 +4,7 @@ import pathlib
 import pytest
 
 from tomlize.exceptions import FailedToParseError
-from tomlize.loaders.setup_py import extract
+from tomlize.setup_py.transformer import extract
 
 EMPTY_RESULT = {
     "project": {},

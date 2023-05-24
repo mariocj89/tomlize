@@ -3,7 +3,7 @@ import pathlib
 import coloredlogs
 import toml
 
-from . import loaders
+from . import setup_py
 from .cli import parse_args
 
 
@@ -13,7 +13,7 @@ def _convert(*, input_file: pathlib.Path, existing_config: dict | None) -> dict:
         result.update(existing_config)
 
     if input_file.name == "setup.py":
-        data = loaders.setup_py.extract(input_file)
+        data = setup_py.transformer.extract(input_file)
         # TODO: Merge with existing data
         result.update(data)
 
