@@ -1,4 +1,5 @@
 import pathlib
+import sys
 from typing import Optional
 
 import coloredlogs
@@ -6,21 +7,26 @@ import tomlkit
 
 from . import setup_py
 from .cli import parse_args
+from .exceptions import ConversionError
 
 
 def _convert(
-    *, input_file: pathlib.Path, existing_config: Optional[dict] = None
-) -> dict:
-    result = {}
-    if existing_config:
-        result.update(existing_config)
-
+    *, input_file: pathlib.Path, existing_config: Optional[str] = None
+) -> tomlkit.TOMLDocument:
     if input_file.name == "setup.py":
         data = setup_py.transformer.extract(input_file)
-        # TODO: Merge with existing data
-        result.update(data)
+    else:
+        raise ConversionError(f"Unrecognized input file: {input_file.name}")
 
-    return result
+    if existing_config is not None:
+        doc = tomlkit.parse(existing_config)
+    else:
+        doc = tomlkit.TOMLDocument()
+
+    for key, value in data.items():
+        doc.add(key, value)
+
+    return doc
 
 
 def main(argv):
@@ -30,11 +36,16 @@ def main(argv):
 
     existing_config = None
     if output_file.exists():
-        existing_config = tomlkit.loads(output_file.read_text())
+        existing_config = output_file.read_text()
 
-    result = _convert(
-        input_file=args.input_file,
-        existing_config=existing_config,
-    )
+    try:
+        result = _convert(
+            input_file=args.input_file,
+            existing_config=existing_config,
+        )
+    except ConversionError as error:
+        print(f"Failed to convert files: {error}", file=sys.stderr)
+        sys.exit(1)
+
     with output_file.open("w") as fp:
         tomlkit.dump(result, fp)
