@@ -3,3 +3,7 @@ class FailedToParseError(Exception):
         self.filename = filename
         self.error = error
         super().__init__(f"Failed to parse {filename}: {error!r}")
+
+
+class ConversionError(Exception):
+    """Error during file conversion"""
