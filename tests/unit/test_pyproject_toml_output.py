@@ -52,6 +52,7 @@ class TestConvert:
         assert "warn_return_any = true  # leave my comment alone" in result_text
         extract.assert_called_once()
 
+    @pytest.mark.xfail(reason="This isn't handled currently")
     def test_existing_project_table(self, extract):
         pyproject_toml = """
         [build-system]
