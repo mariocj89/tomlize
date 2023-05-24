@@ -4,78 +4,93 @@ from unittest import mock
 import pytest
 import tomlkit
 
+import tomlize.converter
 from tomlize.converter import convert
 from tomlize.exceptions import ConversionError
 
-
-def decode_and_convert(input_file, existing_config=None):
-    if existing_config is None:
-        config = tomlkit.TOMLDocument()
-    else:
-        config = tomlkit.parse(existing_config)
-    return convert(input_file=input_file, config=config)
+TEST_CONVERTER_FILENAME = "test-file"
+TEST_CONVERTER_FILE = Path("test-file")
 
 
-@mock.patch("tomlize.converter.setup_py.transformer.extract")
-class Testdecode_and_convert:
-    def test_smoke(self, extract):
-        extract.return_value = {"foo": "bar"}
-        result = decode_and_convert(input_file=Path("setup.py"))
-        assert result == {"foo": "bar"}
-        extract.assert_called_once()
+def empty_toml():
+    return tomlkit.TOMLDocument()
 
-    def test_failed_conversion(self, extract):
-        with pytest.raises(ConversionError, match="Unrecognized"):
-            decode_and_convert(input_file=Path("bazgina.cfg"))
-        extract.assert_not_called()
 
-    def test_insert_project_table(self, extract):
-        extract.return_value = {"project": {"name": "poochie", "version": "0.0.1"}}
-        pyproject_toml = """
-        [build-system]
-        build-backend = "setuptools.build_meta"
-        requires = ["setuptools>62"]
-        """
-        result = decode_and_convert(
-            input_file=Path("setup.py"), existing_config=pyproject_toml
+def decode_toml(text):
+    return tomlkit.parse(text)
+
+
+@pytest.fixture()
+def setup_py_extract():
+    fake = mock.Mock()
+    with mock.patch.dict(tomlize.converter.CONVERTERS, {TEST_CONVERTER_FILENAME: fake}):
+        yield fake
+
+
+def test_smoke(setup_py_extract):
+    setup_py_extract.return_value = {"foo": "bar"}
+    result = convert(TEST_CONVERTER_FILE, empty_toml())
+    assert result == {"foo": "bar"}
+    setup_py_extract.assert_called_once()
+
+
+def test_failed_conversion(setup_py_extract):
+    with pytest.raises(ConversionError, match="Unrecognized"):
+        convert(Path("not-supported"), empty_toml())
+    setup_py_extract.assert_not_called()
+
+
+def test_insert_project_table(setup_py_extract):
+    setup_py_extract.return_value = {"project": {"name": "poochie", "version": "0.0.1"}}
+    pyproject_toml = """
+    [build-system]
+    build-backend = "setuptools.build_meta"
+    requires = ["setuptools>62"]
+    """
+    result = convert(
+        TEST_CONVERTER_FILE,
+        decode_toml(pyproject_toml),
+    )
+    assert result["project"] == {"name": "poochie", "version": "0.0.1"}
+    setup_py_extract.assert_called_once()
+
+
+def test_preserve_comments(setup_py_extract):
+    pyproject_toml = """
+    [build-system]
+    build-backend = "setuptools.build_meta"
+    requires = ["setuptools>62"]
+
+    [tool.mypy]
+    warn_return_any = true  # leave my comment alone
+    """
+    setup_py_extract.return_value = {"foo": "bar"}
+    result = convert(
+        TEST_CONVERTER_FILE,
+        decode_toml(pyproject_toml),
+    )
+    assert "foo" in result
+    assert result.get("tool").get("mypy"), tomlkit.dumps(result)
+    result_text = tomlkit.dumps(result)
+    assert "warn_return_any = true  # leave my comment alone" in result_text
+    setup_py_extract.assert_called_once()
+
+
+@pytest.mark.xfail(reason="This isn't handled currently")
+def test_existing_project_table(setup_py_extract):
+    pyproject_toml = """
+    [build-system]
+    build-backend = "setuptools.build_meta"
+    requires = ["setuptools>62"]
+
+    [project]
+    name = "foo"
+    """
+    setup_py_extract.return_value = {"project": {"name": "poochie", "version": "0.0.1"}}
+    with pytest.raises(ConversionError, match=r"\[project\] already exists"):
+        convert(
+            TEST_CONVERTER_FILE,
+            decode_toml(pyproject_toml),
         )
-        assert result["project"] == {"name": "poochie", "version": "0.0.1"}
-        extract.assert_called_once()
 
-    def test_preserve_comments(self, extract):
-        pyproject_toml = """
-        [build-system]
-        build-backend = "setuptools.build_meta"
-        requires = ["setuptools>62"]
-
-        [tool.mypy]
-        warn_return_any = true  # leave my comment alone
-        """
-        extract.return_value = {"foo": "bar"}
-        result = decode_and_convert(
-            input_file=Path("setup.py"),
-            existing_config=pyproject_toml,
-        )
-        assert "foo" in result
-        assert result.get("tool").get("mypy"), tomlkit.dumps(result)
-        result_text = tomlkit.dumps(result)
-        assert "warn_return_any = true  # leave my comment alone" in result_text
-        extract.assert_called_once()
-
-    @pytest.mark.xfail(reason="This isn't handled currently")
-    def test_existing_project_table(self, extract):
-        pyproject_toml = """
-        [build-system]
-        build-backend = "setuptools.build_meta"
-        requires = ["setuptools>62"]
-
-        [project]
-        name = "foo"
-        """
-        extract.return_value = {"project": {"name": "poochie", "version": "0.0.1"}}
-        with pytest.raises(ConversionError, match=r"\[project\] already exists"):
-            decode_and_convert(
-                input_file=Path("setup.py"), existing_config=pyproject_toml
-            )
-
-        extract.assert_called_once()
+    setup_py_extract.assert_called_once()
