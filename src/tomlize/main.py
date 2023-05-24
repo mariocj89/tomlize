@@ -14,14 +14,15 @@ def main(argv):
     coloredlogs.install(level="INFO", fmt="%(message)s")
     output_file = pathlib.Path("pyproject.toml")
 
-    existing_config = None
     if output_file.exists():
-        existing_config = output_file.read_text()
+        existing_config = tomlkit.parse(output_file.read_text())
+    else:
+        existing_config = tomlkit.TOMLDocument()
 
     try:
         result = converter.convert(
             input_file=args.input_file,
-            existing_config=existing_config,
+            config=existing_config,
         )
     except ConversionError as error:
         print(f"Failed to convert files: {error}", file=sys.stderr)
