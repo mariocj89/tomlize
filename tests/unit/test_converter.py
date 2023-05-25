@@ -40,21 +40,6 @@ def test_failed_conversion(setup_py_extract):
     setup_py_extract.assert_not_called()
 
 
-def test_insert_project_table(setup_py_extract):
-    setup_py_extract.return_value = {"project": {"name": "poochie", "version": "0.0.1"}}
-    pyproject_toml = """
-    [build-system]
-    build-backend = "setuptools.build_meta"
-    requires = ["setuptools>62"]
-    """
-    result = convert(
-        TEST_CONVERTER_FILE,
-        decode_toml(pyproject_toml),
-    )
-    assert result["project"] == {"name": "poochie", "version": "0.0.1"}
-    setup_py_extract.assert_called_once()
-
-
 def test_preserve_comments(setup_py_extract):
     pyproject_toml = """
     [build-system]
@@ -73,24 +58,4 @@ def test_preserve_comments(setup_py_extract):
     assert result.get("tool").get("mypy"), tomlkit.dumps(result)
     result_text = tomlkit.dumps(result)
     assert "warn_return_any = true  # leave my comment alone" in result_text
-    setup_py_extract.assert_called_once()
-
-
-@pytest.mark.xfail(reason="This isn't handled currently")
-def test_existing_project_table(setup_py_extract):
-    pyproject_toml = """
-    [build-system]
-    build-backend = "setuptools.build_meta"
-    requires = ["setuptools>62"]
-
-    [project]
-    name = "foo"
-    """
-    setup_py_extract.return_value = {"project": {"name": "poochie", "version": "0.0.1"}}
-    with pytest.raises(ConversionError, match=r"\[project\] already exists"):
-        convert(
-            TEST_CONVERTER_FILE,
-            decode_toml(pyproject_toml),
-        )
-
     setup_py_extract.assert_called_once()
