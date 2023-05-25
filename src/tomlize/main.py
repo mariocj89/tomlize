@@ -29,3 +29,4 @@ def main(argv):
 
     with output_file.open("w") as fp:
         tomlkit.dump(result, fp)
+        print("pyproject.toml file updated!")
