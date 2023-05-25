@@ -92,8 +92,8 @@ def test_end_to_end_empty(setup_py, empty_pyproject_toml):
         == """\
 
 [build-system]
-build-backend = "setuptools.build_meta"
 requires = ["setuptools >= 70.0.0", "toml > 1.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "package"
