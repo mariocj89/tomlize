@@ -10,6 +10,14 @@ import tomlkit.items
 from .exceptions import MergingError
 
 
+def _copy_dict(config: tomlkit.TOMLDocument, data: dict):
+    """Copy all dict values to config"""
+    for key, value in data.items():
+        if key in config and config[key] == value:
+            continue
+        config.add(key, value)
+
+
 def _merge_requires(config: tomlkit.items.Array, data: list[str]):
     for require in data:
         if require not in config:
@@ -20,13 +28,11 @@ def _merge_build_system(config: tomlkit.items.Table, data: dict):
     if requires := data.pop("requires", None):
         config.setdefault("requires", [])
         _merge_requires(config["requires"], requires)
-    for key, value in data.items():
-        config.add(key, value)
+    _copy_dict(config, data)
 
 
 def _merge_project(config: tomlkit.items.Table, data: dict):
-    for key, value in data.items():
-        config.add(key, value)
+    _copy_dict(config, data)
 
 
 def add_data(config: tomlkit.TOMLDocument, data: dict):

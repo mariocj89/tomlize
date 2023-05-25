@@ -50,6 +50,17 @@ def test_insert_project_table():
                 "requires": ["setuptools", "Cython"],
             },
         ),
+        (
+            {
+                "build-backend": "setuptools.build_meta",
+            },
+            {
+                "build-backend": "setuptools.build_meta",
+            },
+            {
+                "build-backend": "setuptools.build_meta",
+            },
+        ),
         pytest.param(  # Merge 2 requires same key
             {
                 "requires": ["setuptools>1"],
