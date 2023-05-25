@@ -7,3 +7,7 @@ class FailedToParseError(Exception):
 
 class ConversionError(Exception):
     """Error during file conversion"""
+
+
+class MergingError(Exception):
+    """Failed to add data to existing pyproject document"""
