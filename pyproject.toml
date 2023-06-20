@@ -28,3 +28,7 @@ dependencies = [
 "Code" = "https://github.com/mariocj89/tomlize"
 "Issue tracker" = "https://github.com/mariocj89/tomlize/issues"
 "Download" = "https://pypi.org/project/tomlize/#files"
+
+[project.scripts]
+tomlize = "tomlize.main:main"
+

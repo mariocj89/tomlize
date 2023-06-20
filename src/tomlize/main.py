@@ -9,7 +9,7 @@ from .cli import parse_args
 from .exceptions import ConversionError
 
 
-def main(argv):
+def main(argv=None):
     args = parse_args(argv)
     coloredlogs.install(level="INFO", fmt="%(message)s")
     output_file = pathlib.Path("pyproject.toml")
